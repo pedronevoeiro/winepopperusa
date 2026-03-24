@@ -1,0 +1,33 @@
+{
+  "name": "winepopper-storefront",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "@medusajs/js-sdk": "^2.8.0",
+    "@stripe/stripe-js": "^5.5.0",
+    "@stripe/react-stripe-js": "^3.5.0",
+    "clsx": "^2.1.1",
+    "zustand": "^5.0.0",
+    "embla-carousel-react": "^8.5.0",
+    "lucide-react": "^0.470.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "@tailwindcss/postcss": "^4.1.0",
+    "tailwindcss": "^4.1.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.3.0"
+  }
+}

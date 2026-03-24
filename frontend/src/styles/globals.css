@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* ── Brand Design Tokens ─────────────────────────────────── */
+@theme {
+  --color-brand-red: #7B2D3B;
+  --color-brand-red-dark: #5E1F2C;
+  --color-brand-red-light: #9E4A5A;
+  --color-brand-black: #1a1a1a;
+  --color-brand-white: #ffffff;
+  --color-brand-gray-50: #f9f9f9;
+  --color-brand-gray-100: #f0f0f0;
+  --color-brand-gray-200: #e0e0e0;
+  --color-brand-gray-300: #cccccc;
+  --color-brand-gray-500: #888888;
+  --color-brand-gray-700: #555555;
+  --color-brand-gray-900: #1a1a1a;
+
+  --font-heading: "Montserrat", sans-serif;
+  --font-body: "Rubik", sans-serif;
+}
+
+/* ── Base Styles ─────────────────────────────────────────── */
+body {
+  font-family: var(--font-body);
+  color: var(--color-brand-black);
+  background-color: var(--color-brand-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+/* ── Custom Utilities ────────────────────────────────────── */
+.btn-primary {
+  @apply bg-brand-red text-white font-heading font-bold px-8 py-3 rounded-[30px]
+         hover:bg-brand-red-dark transition-colors duration-200
+         inline-flex items-center justify-center gap-2;
+}
+
+.btn-secondary {
+  @apply border-2 border-brand-black text-brand-black font-heading font-bold px-8 py-3 rounded-[30px]
+         hover:bg-brand-black hover:text-white transition-colors duration-200
+         inline-flex items-center justify-center gap-2;
+}
+
+.btn-outline-white {
+  @apply border-2 border-white text-white font-heading font-bold px-8 py-3 rounded-[30px]
+         hover:bg-white hover:text-brand-black transition-colors duration-200
+         inline-flex items-center justify-center gap-2;
+}
+
+/* ── Sale Badge ──────────────────────────────────────────── */
+.sale-badge {
+  @apply bg-brand-red text-white text-xs font-bold uppercase px-2 py-1 rounded-full;
+}
+
+/* ── Price Display ───────────────────────────────────────── */
+.price-current {
+  @apply text-2xl font-heading font-bold text-brand-black;
+}
+
+.price-compare {
+  @apply text-lg text-brand-gray-500 line-through ml-2;
+}
+
+/* ── Container ───────────────────────────────────────────── */
+.container-main {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* ── Smooth scroll ───────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── Focus styles for accessibility ──────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-brand-red);
+  outline-offset: 2px;
+}

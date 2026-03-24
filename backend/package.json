@@ -1,0 +1,33 @@
+{
+  "name": "winepopper-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Winepopper USA - Medusa v2 Backend",
+  "scripts": {
+    "dev": "medusa develop",
+    "start": "medusa start",
+    "build": "medusa build",
+    "seed": "medusa exec ./src/scripts/seed.ts",
+    "migrate": "medusa db:migrate",
+    "worker": "medusa start --worker"
+  },
+  "dependencies": {
+    "@medusajs/admin-sdk": "^2.8.0",
+    "@medusajs/framework": "^2.8.0",
+    "@medusajs/medusa": "^2.8.0",
+    "@medusajs/medusa-cli": "^2.8.0",
+    "@medusajs/file-s3": "^2.8.0",
+    "@medusajs/payment-stripe": "^2.8.0",
+    "pg": "^8.13.0",
+    "awilix": "^12.0.6"
+  },
+  "devDependencies": {
+    "@medusajs/types": "^2.8.0",
+    "@swc/core": "^1.10.0",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
