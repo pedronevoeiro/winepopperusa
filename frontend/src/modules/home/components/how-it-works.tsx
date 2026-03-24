@@ -47,14 +47,16 @@ export function HowItWorks() {
           </p>
         </div>
 
-        {/* Demo video */}
+        {/* Demo video — short autoplay loop */}
         <div className="mx-auto mt-12 max-w-3xl">
           <div className="relative rounded-2xl overflow-hidden shadow-xl bg-brand-black aspect-video">
             <video
-              src="/images/WINE HORIZONTAL EUA + CLASSIC (1).mp4"
-              controls
+              src="/images/3s.mp4"
+              autoPlay
+              loop
+              muted
               playsInline
-              preload="metadata"
+              preload="auto"
               className="w-full h-full object-cover"
             />
           </div>
