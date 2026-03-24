@@ -228,12 +228,11 @@ export default function HowItWorksPage() {
               controls
               playsInline
               preload="metadata"
-              poster="/images/optimized/winepopper-fotos-ok-31.webp"
               className="w-full h-full object-cover"
             />
           </div>
 
-          {/* Quick video - autoplay loop */}
+          {/* Quick video + zoom photo */}
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="rounded-xl overflow-hidden shadow-lg bg-brand-black aspect-video">
               <video
