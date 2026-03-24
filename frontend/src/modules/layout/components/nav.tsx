@@ -8,7 +8,7 @@ import { useCartStore } from "@/lib/cart-store"
 
 const links = [
   { href: "/products", label: "Products" },
-  { href: "/how-it-works", label: "How It Works" },
+  { href: "/#how-it-works", label: "How It Works" },
   { href: "/contact", label: "Contact" },
 ]
 

@@ -47,6 +47,20 @@ export function HowItWorks() {
           </p>
         </div>
 
+        {/* Demo video */}
+        <div className="mx-auto mt-12 max-w-3xl">
+          <div className="relative rounded-2xl overflow-hidden shadow-xl bg-brand-black aspect-video">
+            <video
+              src="/images/WINE HORIZONTAL EUA + CLASSIC (1).mp4"
+              controls
+              playsInline
+              preload="metadata"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        {/* Steps */}
         <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
           {steps.map((step, i) => (
             <div key={step.number} className="relative text-center">
