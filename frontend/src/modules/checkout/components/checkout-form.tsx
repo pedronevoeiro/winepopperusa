@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, type FormEvent, type ChangeEvent } from "
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { PaymentElement } from "@stripe/react-stripe-js"
 import {
   Lock,
   Tag,
@@ -68,19 +69,6 @@ function getDeliveryDate(daysToAdd: number): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-function formatCardNumber(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 16)
-  return digits.replace(/(\d{4})(?=\d)/g, "$1 ")
-}
-
-function formatExpiry(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 4)
-  if (digits.length >= 3) {
-    return digits.slice(0, 2) + " / " + digits.slice(2)
-  }
-  return digits
-}
-
 function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 10)
   if (digits.length >= 7) {
@@ -94,7 +82,13 @@ function formatPhoneNumber(value: string): string {
 
 // ── Component ────────────────────────────────────────────
 
-export default function CheckoutForm() {
+interface CheckoutFormProps {
+  clientSecret: string | null
+  stripe?: ReturnType<typeof import("@stripe/react-stripe-js").useStripe> | null
+  elements?: ReturnType<typeof import("@stripe/react-stripe-js").useElements> | null
+}
+
+export default function CheckoutForm({ clientSecret, stripe = null, elements = null }: CheckoutFormProps) {
   const router = useRouter()
 
   // Cart state
@@ -118,11 +112,8 @@ export default function CheckoutForm() {
   const [zip, setZip] = useState("")
   const [phone, setPhone] = useState("")
   const [shippingMethod, setShippingMethod] = useState<"standard" | "express" | "free">("standard")
-  const [cardNumber, setCardNumber] = useState("")
-  const [cardExpiry, setCardExpiry] = useState("")
-  const [cardCvc, setCardCvc] = useState("")
-  const [cardName, setCardName] = useState("")
-  const [submitting, setSubmitting] = useState(false)
+  const [submitting, setSubmitting] = useState("")
+  const [paymentError, setPaymentError] = useState("")
 
   // Discount code input
   const [codeInput, setCodeInput] = useState("")
@@ -196,19 +187,6 @@ export default function CheckoutForm() {
     setCodeError("")
   }
 
-  // Input formatting handlers
-  function handleCardNumberChange(e: ChangeEvent<HTMLInputElement>) {
-    setCardNumber(formatCardNumber(e.target.value))
-  }
-
-  function handleExpiryChange(e: ChangeEvent<HTMLInputElement>) {
-    setCardExpiry(formatExpiry(e.target.value))
-  }
-
-  function handleCvcChange(e: ChangeEvent<HTMLInputElement>) {
-    setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 4))
-  }
-
   function handlePhoneChange(e: ChangeEvent<HTMLInputElement>) {
     setPhone(formatPhoneNumber(e.target.value))
   }
@@ -223,24 +201,51 @@ export default function CheckoutForm() {
 
   // Validation helpers
   function isEmailValid(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) }
-  function isCardValid(v: string) { return v.replace(/\s/g, "").length >= 15 }
-  function isExpiryValid(v: string) { return /^\d{2}\s?\/?\s?\d{2}$/.test(v.trim()) }
-  function isCvcValid(v: string) { return v.length >= 3 }
 
-  // Form submit
-  function handleSubmit(e: FormEvent) {
+  // Form submit with real Stripe payment
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    setSubmitting(true)
 
-    // Simulate order placement
-    setTimeout(() => {
+    if (!stripe || !elements || !clientSecret) {
+      return
+    }
+
+    setSubmitting("processing")
+    setPaymentError("")
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/order/confirmed`,
+        receipt_email: email,
+        shipping: {
+          name: `${firstName} ${lastName}`,
+          address: {
+            line1: address,
+            line2: apt || undefined,
+            city,
+            state,
+            postal_code: zip,
+            country: "US",
+          },
+          phone: phone || undefined,
+        },
+      },
+      redirect: "if_required",
+    })
+
+    if (error) {
+      setPaymentError(error.message || "Payment failed. Please try again.")
+      setSubmitting("")
+    } else {
+      // Payment succeeded
       clearCart()
       router.push("/order/confirmed")
-    }, 1500)
+    }
   }
 
   // If cart is empty
-  if (items.length === 0 && !submitting) {
+  if (items.length === 0 && submitting === "") {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4">
         <Package className="w-16 h-16 text-brand-gray-300" />
@@ -411,40 +416,7 @@ export default function CheckoutForm() {
           </div>
         </div>
 
-        {/* Express Checkout */}
-        <div className="mb-6">
-          <div className="bg-white rounded-xl border border-brand-gray-200 p-5">
-            <p className="text-xs text-center text-brand-gray-500 font-body mb-3">Express Checkout</p>
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 bg-black text-white rounded-lg py-3 text-sm font-semibold hover:bg-gray-800 transition-colors"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-                Pay
-              </button>
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 bg-black text-white rounded-lg py-3 text-sm font-semibold hover:bg-gray-800 transition-colors"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3.22 8.69c.2-.56.94-.83 1.64-.6l.13.05C6.44 8.63 8.13 8.37 10 7.64l.22-.09c1.7-.69 3.47-1.52 5.47-1.94.9-.19 1.78-.25 2.56-.18a4 4 0 012.28.88c.58.5.98 1.16 1.18 1.94l.23.9c.32 1.27.38 2.37.2 3.38-.2 1.06-.64 1.96-1.28 2.68a5.46 5.46 0 01-2.22 1.5l-.68.24c-1.17.37-2.33.45-3.47.28a8.1 8.1 0 01-1.7-.45l-.63-.25a19 19 0 00-4.32-1.09c-.66-.08-1.3-.08-1.88 0l-.32.05c-.7.13-1.38-.26-1.52-.86L3.22 8.69z"/></svg>
-                Pay
-              </button>
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 bg-[#0070ba] text-white rounded-lg py-3 text-sm font-semibold hover:bg-[#005ea6] transition-colors"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 01-.633-.74L4.944 2.78a.77.77 0 01.757-.644h6.23c2.068 0 3.5.42 4.233 1.258.68.776.853 1.85.532 3.29l-.01.06v.51l.398.225c.34.18.61.388.823.625.338.38.556.857.644 1.414.09.573.04 1.254-.144 2.028-.212.89-.557 1.664-1.024 2.3a4.7 4.7 0 01-1.58 1.39c-.61.34-1.313.577-2.094.704-.76.124-1.6.186-2.5.186H10.28a.95.95 0 00-.938.803l-.04.22-.658 4.166-.03.163a.95.95 0 01-.938.803H7.076z"/></svg>
-                PayPal
-              </button>
-            </div>
-            <div className="flex items-center gap-3 mt-4">
-              <div className="flex-1 h-px bg-brand-gray-200" />
-              <span className="text-xs text-brand-gray-400 font-body">or pay with card</span>
-              <div className="flex-1 h-px bg-brand-gray-200" />
-            </div>
-          </div>
-        </div>
+        {/* Express Checkout is handled by Stripe PaymentElement below */}
 
         {/* Mobile order summary */}
         <div className="lg:hidden mb-6">
@@ -656,74 +628,42 @@ export default function CheckoutForm() {
               )}
             </div>
 
-            {/* Payment */}
+            {/* Payment — Stripe Elements */}
             <div className="bg-white rounded-xl border border-brand-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading font-bold text-lg text-brand-black">
-                  Payment
-                </h2>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-brand-gray-400 bg-brand-gray-100 px-2 py-1 rounded font-mono">VISA</span>
-                  <span className="text-[10px] text-brand-gray-400 bg-brand-gray-100 px-2 py-1 rounded font-mono">MC</span>
-                  <span className="text-[10px] text-brand-gray-400 bg-brand-gray-100 px-2 py-1 rounded font-mono">AMEX</span>
+              <h2 className="font-heading font-bold text-lg text-brand-black mb-4">
+                Payment
+              </h2>
+              {clientSecret ? (
+                <PaymentElement
+                  options={{
+                    layout: "tabs",
+                    wallets: {
+                      applePay: "auto",
+                      googlePay: "auto",
+                    },
+                  }}
+                />
+              ) : (
+                <div className="py-8 text-center text-brand-gray-400 text-sm">
+                  Loading payment options...
                 </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <input
-                    type="text"
-                    required
-                    autoComplete="cc-number"
-                    value={cardNumber}
-                    onChange={handleCardNumberChange}
-                    onBlur={() => markTouched("card")}
-                    placeholder="1234 5678 9012 3456"
-                    inputMode="numeric"
-                    className={`${inputCls} ${touched.card && !isCardValid(cardNumber) ? inputErrorCls : ""}`}
-                  />
-                </div>
-                <input
-                  type="text"
-                  required
-                  autoComplete="cc-exp"
-                  value={cardExpiry}
-                  onChange={handleExpiryChange}
-                  onBlur={() => markTouched("expiry")}
-                  placeholder="MM / YY"
-                  inputMode="numeric"
-                  className={`${inputCls} ${touched.expiry && !isExpiryValid(cardExpiry) ? inputErrorCls : ""}`}
-                />
-                <input
-                  type="text"
-                  required
-                  autoComplete="cc-csc"
-                  value={cardCvc}
-                  onChange={handleCvcChange}
-                  onBlur={() => markTouched("cvc")}
-                  placeholder="CVC"
-                  inputMode="numeric"
-                  className={`${inputCls} ${touched.cvc && !isCvcValid(cardCvc) ? inputErrorCls : ""}`}
-                />
-                <input
-                  type="text"
-                  required
-                  autoComplete="cc-name"
-                  value={cardName}
-                  onChange={(e) => setCardName(e.target.value)}
-                  placeholder="Name on card"
-                  className={`${inputCls} sm:col-span-2`}
-                />
-              </div>
+              )}
+              {paymentError && (
+                <p className="text-sm text-red-600 mt-3 flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5" />
+                  {paymentError}
+                </p>
+              )}
               <div className="flex items-center gap-1.5 text-xs text-brand-gray-500 mt-3">
                 <Lock className="w-3.5 h-3.5" />
-                <span>256-bit SSL encryption &mdash; your payment info is secure.</span>
+                <span>Powered by Stripe &mdash; 256-bit SSL encryption.</span>
               </div>
             </div>
 
             {/* Place Order */}
             <button
               type="submit"
-              disabled={submitting}
+              disabled={!!submitting || !stripe || !clientSecret}
               className="btn-primary w-full py-4 text-base font-bold disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-brand-red/25 hover:shadow-brand-red/40 transition-all"
             >
               {submitting ? (
