@@ -4,7 +4,7 @@
  */
 import { Resend } from "resend"
 
-const resend = new Resend("re_CHo7MJQo_JySoHskd7q8HDUukPianfFXF")
+const resend = new Resend(process.env.RESEND_API_KEY || "")
 const FROM = "Winepopper USA <orders@winepopperusa.com>"
 const TO = "pedro@winepopper.com.br"
 
