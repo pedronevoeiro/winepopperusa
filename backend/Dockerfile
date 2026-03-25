@@ -8,11 +8,14 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --legacy-peer-deps
 
+# Add node_modules/.bin to PATH
+ENV PATH="/app/node_modules/.bin:$PATH"
+
 # Copy source code
 COPY . .
 
 # Build
-RUN npm run build
+RUN medusa build
 
 # Production
 ENV NODE_ENV=production
@@ -20,4 +23,4 @@ ENV PORT=9000
 
 EXPOSE 9000
 
-CMD ["sh", "-c", "npx medusa db:migrate && npm run start"]
+CMD ["sh", "-c", "medusa db:migrate && medusa start"]
