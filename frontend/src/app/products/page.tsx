@@ -3,9 +3,12 @@ import { products } from "@/lib/products-data"
 import ProductCard from "@/modules/products/components/product-card"
 
 export const metadata: Metadata = {
-  title: "Our Products | Winepopper USA",
+  title: "Our Products",
   description:
     "Shop the full range of Winepopper automatic gas corkscrews and accessories. Open wine in under 3 seconds — effortlessly.",
+  alternates: {
+    canonical: "/products",
+  },
   openGraph: {
     title: "Our Products | Winepopper USA",
     description:

@@ -30,25 +30,34 @@ const faqs = [
   },
 ]
 
-function FAQItem({ q, a }: { q: string; a: string }) {
+function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
   const [open, setOpen] = useState(false)
+  const answerId = `faq-answer-${index}`
 
   return (
     <div className="border-b border-brand-gray-100">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between py-5 text-left"
-      >
-        <span className="pr-4 font-heading text-base font-semibold text-brand-black">
-          {q}
-        </span>
-        <ChevronDown
-          className={`h-5 w-5 shrink-0 text-brand-gray-500 transition-transform duration-200 ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+      <h3>
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex w-full items-center justify-between py-5 text-left"
+          aria-expanded={open}
+          aria-controls={answerId}
+        >
+          <span className="pr-4 font-heading text-base font-semibold text-brand-black">
+            {q}
+          </span>
+          <ChevronDown
+            className={`h-5 w-5 shrink-0 text-brand-gray-500 transition-transform duration-200 ${
+              open ? "rotate-180" : ""
+            }`}
+            aria-hidden="true"
+          />
+        </button>
+      </h3>
       <div
+        id={answerId}
+        role="region"
+        aria-labelledby={`faq-question-${index}`}
         className={`overflow-hidden transition-all duration-300 ${
           open ? "max-h-60 pb-5" : "max-h-0"
         }`}
@@ -61,7 +70,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
 export function FAQSection() {
   return (
-    <section className="bg-brand-gray-50 py-20 md:py-28">
+    <section id="faq" className="bg-brand-gray-50 py-20 md:py-28">
       <div className="mx-auto max-w-3xl px-6">
         <div className="mb-12 text-center">
           <span className="font-body text-sm font-semibold uppercase tracking-widest text-brand-red">
@@ -73,8 +82,8 @@ export function FAQSection() {
         </div>
 
         <div className="rounded-2xl bg-white px-6 py-2 shadow-sm md:px-8">
-          {faqs.map((faq) => (
-            <FAQItem key={faq.q} q={faq.q} a={faq.a} />
+          {faqs.map((faq, i) => (
+            <FAQItem key={faq.q} q={faq.q} a={faq.a} index={i} />
           ))}
         </div>
       </div>

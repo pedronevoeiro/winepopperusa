@@ -3,6 +3,7 @@ import { Montserrat, Rubik } from "next/font/google"
 import Script from "next/script"
 import "@/styles/globals.css"
 import { siteConfig, analyticsConfig } from "@/lib/config"
+import { getOrganizationSchema, getWebSiteSchema } from "@/lib/structured-data"
 import AnnouncementBar from "@/modules/layout/components/announcement-bar"
 import Nav from "@/modules/layout/components/nav"
 import Footer from "@/modules/layout/components/footer"
@@ -21,10 +22,16 @@ const rubik = Rubik({
 })
 
 export const metadata: Metadata = {
-  title: "Winepopper USA | Open Wine with a Click",
+  title: {
+    default: "Winepopper USA | Open Wine with a Click",
+    template: "%s | Winepopper USA",
+  },
   description:
     "Automatic gas corkscrew that opens wine in under 3 seconds. Preserves aroma, never breaks corks. Shop Winepopper corkscrews and refill capsules.",
   metadataBase: new URL(siteConfig.url),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Winepopper USA | Open Wine with a Click",
     description:
@@ -52,6 +59,16 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${montserrat.variable} ${rubik.variable}`}>
       <body className="min-h-screen flex flex-col">
+        {/* ── Structured Data ────────────────────────────── */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationSchema()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(getWebSiteSchema()) }}
+        />
+
         {/* ── Hotjar ───────────────────────────────────── */}
         <Script id="hotjar" strategy="afterInteractive">
           {`
@@ -66,10 +83,18 @@ export default function RootLayout({
           `}
         </Script>
 
+        {/* ── Skip to content (accessibility) ────────── */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-brand-red focus:px-4 focus:py-2 focus:text-white focus:outline-none"
+        >
+          Skip to main content
+        </a>
+
         {/* ── Layout Shell ─────────────────────────────── */}
         <AnnouncementBar />
         <Nav />
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">{children}</main>
         <Footer />
         <CartDrawer />
       </body>

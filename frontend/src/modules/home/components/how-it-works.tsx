@@ -58,6 +58,8 @@ export function HowItWorks() {
               playsInline
               preload="auto"
               className="w-full h-full object-cover"
+              aria-label="Winepopper opening a wine bottle in 3 seconds"
+              title="Winepopper in action — 3-second cork extraction"
             />
           </div>
         </div>

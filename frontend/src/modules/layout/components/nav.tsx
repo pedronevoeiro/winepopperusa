@@ -86,10 +86,11 @@ export default function Nav() {
 
       {/* Mobile drawer */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
           />
           <aside className="absolute right-0 top-0 h-full w-72 bg-white shadow-xl p-6 flex flex-col gap-6 animate-slide-in">
             <button

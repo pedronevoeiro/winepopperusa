@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo, type FormEvent, type ChangeEvent } from "
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { PaymentElement } from "@stripe/react-stripe-js"
+import { PaymentElement, ExpressCheckoutElement } from "@stripe/react-stripe-js"
+import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js"
 import {
   Lock,
   Tag,
@@ -332,6 +333,31 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
     }
   }
 
+  // Express Checkout confirm handler (Apple Pay, Google Pay, Link)
+  async function handleExpressCheckoutConfirm(event: StripeExpressCheckoutElementConfirmEvent) {
+    if (!stripe || !elements || !clientSecret) return
+
+    setSubmitting("processing")
+    setPaymentError("")
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      clientSecret,
+      confirmParams: {
+        return_url: `${window.location.origin}/order/confirmed`,
+      },
+      redirect: "if_required",
+    })
+
+    if (error) {
+      setPaymentError(error.message || "Payment failed. Please try again.")
+      setSubmitting("")
+    } else {
+      clearCart()
+      router.push("/order/confirmed")
+    }
+  }
+
   // If cart is empty
   if (items.length === 0 && submitting === "") {
     return (
@@ -504,7 +530,41 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
           </div>
         </div>
 
-        {/* Express Checkout is handled by Stripe PaymentElement below */}
+        {/* Express Checkout — Apple Pay, Google Pay, Link */}
+        {clientSecret && (
+          <div className="mb-6 bg-white rounded-xl border border-brand-gray-200 p-6">
+            <h2 className="font-heading font-bold text-lg text-brand-black mb-4">
+              Express Checkout
+            </h2>
+            <ExpressCheckoutElement
+              onConfirm={handleExpressCheckoutConfirm}
+              options={{
+                buttonType: {
+                  applePay: "buy",
+                  googlePay: "buy",
+                },
+                buttonTheme: {
+                  applePay: "black",
+                  googlePay: "black",
+                },
+                layout: {
+                  maxColumns: 3,
+                  maxRows: 1,
+                },
+              }}
+            />
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-brand-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-white px-4 text-brand-gray-500 font-body">
+                  Or pay with card
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Mobile order summary */}
         <div className="lg:hidden mb-6">
@@ -734,9 +794,16 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
                 <PaymentElement
                   options={{
                     layout: "tabs",
+                    defaultValues: {
+                      billingDetails: {
+                        address: {
+                          country: "US",
+                        },
+                      },
+                    },
                     wallets: {
-                      applePay: "auto",
-                      googlePay: "auto",
+                      applePay: "never",
+                      googlePay: "never",
                     },
                   }}
                 />
