@@ -280,8 +280,29 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
     setPhone(formatPhoneNumber(e.target.value))
   }
 
+  const [zipLookedUp, setZipLookedUp] = useState(false)
+
   function handleZipChange(e: ChangeEvent<HTMLInputElement>) {
-    setZip(e.target.value.replace(/\D/g, "").slice(0, 5))
+    const value = e.target.value.replace(/\D/g, "").slice(0, 5)
+    setZip(value)
+    setZipLookedUp(false)
+
+    if (value.length === 5) {
+      fetch(`https://api.zippopotam.us/us/${value}`)
+        .then((res) => {
+          if (!res.ok) return null
+          return res.json()
+        })
+        .then((data) => {
+          if (data?.places?.[0]) {
+            const place = data.places[0]
+            if (!city) setCity(place["place name"] || "")
+            if (!state) setState(place["state abbreviation"] || "")
+            setZipLookedUp(true)
+          }
+        })
+        .catch(() => {})
+    }
   }
 
   function markTouched(field: string) {
@@ -625,6 +646,23 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
                 Shipping Address
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <input
+                    type="text"
+                    required
+                    autoComplete="postal-code"
+                    value={zip}
+                    onChange={handleZipChange}
+                    placeholder="ZIP code"
+                    inputMode="numeric"
+                    className={inputCls}
+                  />
+                  {zipLookedUp && city && state && (
+                    <p className="text-xs text-green-600 mt-1">
+                      {city}, {STATE_NAMES[state] || state} — auto-filled from ZIP
+                    </p>
+                  )}
+                </div>
                 <input
                   type="text"
                   required
@@ -681,16 +719,6 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
                     <option key={s} value={s}>{STATE_NAMES[s]} ({s})</option>
                   ))}
                 </select>
-                <input
-                  type="text"
-                  required
-                  autoComplete="postal-code"
-                  value={zip}
-                  onChange={handleZipChange}
-                  placeholder="ZIP code"
-                  inputMode="numeric"
-                  className={inputCls}
-                />
                 <input
                   type="tel"
                   autoComplete="tel"
