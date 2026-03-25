@@ -93,12 +93,25 @@ function formatPhoneNumber(value: string): string {
 // ── Component ────────────────────────────────────────────
 
 interface CheckoutFormProps {
-  clientSecret: string | null
   stripe?: ReturnType<typeof import("@stripe/react-stripe-js").useStripe> | null
   elements?: ReturnType<typeof import("@stripe/react-stripe-js").useElements> | null
 }
 
-export default function CheckoutForm({ clientSecret, stripe = null, elements = null }: CheckoutFormProps) {
+async function createPaymentIntent(amount: number, itemCount: number): Promise<string> {
+  const res = await fetch("/api/create-payment-intent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      amount,
+      metadata: { itemCount: itemCount.toString() },
+    }),
+  })
+  const data = await res.json()
+  if (data.error) throw new Error(data.error)
+  return data.clientSecret
+}
+
+export default function CheckoutForm({ stripe = null, elements = null }: CheckoutFormProps) {
   const router = useRouter()
 
   // Cart state
@@ -312,70 +325,91 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
   // Validation helpers
   function isEmailValid(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) }
 
-  // Form submit with real Stripe payment
+  // Form submit — creates PaymentIntent on demand, then confirms
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
 
-    if (!stripe || !elements || !clientSecret) {
-      return
-    }
+    if (!stripe || !elements) return
 
     setSubmitting("processing")
     setPaymentError("")
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/order/confirmed`,
-        receipt_email: email,
-        shipping: {
-          name: `${firstName} ${lastName}`,
-          address: {
-            line1: address,
-            line2: apt || undefined,
-            city,
-            state,
-            postal_code: zip,
-            country: "US",
-          },
-          phone: phone || undefined,
-        },
-      },
-      redirect: "if_required",
-    })
+    try {
+      // Validate form elements first
+      const { error: submitError } = await elements.submit()
+      if (submitError) {
+        setPaymentError(submitError.message || "Please check your payment details.")
+        setSubmitting("")
+        return
+      }
 
-    if (error) {
-      setPaymentError(error.message || "Payment failed. Please try again.")
+      // Create PaymentIntent on the server
+      const clientSecret = await createPaymentIntent(orderTotal, items.length)
+
+      const { error } = await stripe.confirmPayment({
+        elements,
+        clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/order/confirmed`,
+          receipt_email: email,
+          shipping: {
+            name: `${firstName} ${lastName}`,
+            address: {
+              line1: address,
+              line2: apt || undefined,
+              city,
+              state,
+              postal_code: zip,
+              country: "US",
+            },
+            phone: phone || undefined,
+          },
+        },
+        redirect: "if_required",
+      })
+
+      if (error) {
+        setPaymentError(error.message || "Payment failed. Please try again.")
+        setSubmitting("")
+      } else {
+        clearCart()
+        router.push("/order/confirmed")
+      }
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : "Payment failed. Please try again.")
       setSubmitting("")
-    } else {
-      // Payment succeeded
-      clearCart()
-      router.push("/order/confirmed")
     }
   }
 
   // Express Checkout confirm handler (Apple Pay, Google Pay, Link)
   async function handleExpressCheckoutConfirm(event: StripeExpressCheckoutElementConfirmEvent) {
-    if (!stripe || !elements || !clientSecret) return
+    if (!stripe || !elements) return
 
     setSubmitting("processing")
     setPaymentError("")
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      clientSecret,
-      confirmParams: {
-        return_url: `${window.location.origin}/order/confirmed`,
-      },
-      redirect: "if_required",
-    })
+    try {
+      const clientSecret = await createPaymentIntent(orderTotal, items.length)
 
-    if (error) {
-      setPaymentError(error.message || "Payment failed. Please try again.")
+      const { error } = await stripe.confirmPayment({
+        elements,
+        clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/order/confirmed`,
+        },
+        redirect: "if_required",
+      })
+
+      if (error) {
+        setPaymentError(error.message || "Payment failed. Please try again.")
+        setSubmitting("")
+      } else {
+        clearCart()
+        router.push("/order/confirmed")
+      }
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : "Payment failed. Please try again.")
       setSubmitting("")
-    } else {
-      clearCart()
-      router.push("/order/confirmed")
     }
   }
 
@@ -552,7 +586,7 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
         </div>
 
         {/* Express Checkout — Apple Pay, Google Pay, Link */}
-        {clientSecret && (
+        {stripe && (
           <div className="mb-6 bg-white rounded-xl border border-brand-gray-200 p-6">
             <h2 className="font-heading font-bold text-lg text-brand-black mb-4">
               Express Checkout
@@ -818,28 +852,22 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
               <h2 className="font-heading font-bold text-lg text-brand-black mb-4">
                 Payment
               </h2>
-              {clientSecret ? (
-                <PaymentElement
-                  options={{
-                    layout: "tabs",
-                    defaultValues: {
-                      billingDetails: {
-                        address: {
-                          country: "US",
-                        },
+              <PaymentElement
+                options={{
+                  layout: "tabs",
+                  defaultValues: {
+                    billingDetails: {
+                      address: {
+                        country: "US",
                       },
                     },
-                    wallets: {
-                      applePay: "never",
-                      googlePay: "never",
-                    },
-                  }}
-                />
-              ) : (
-                <div className="py-8 text-center text-brand-gray-400 text-sm">
-                  Loading payment options...
-                </div>
-              )}
+                  },
+                  wallets: {
+                    applePay: "never",
+                    googlePay: "never",
+                  },
+                }}
+              />
               {paymentError && (
                 <p className="text-sm text-red-600 mt-3 flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5" />
@@ -855,7 +883,7 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
             {/* Place Order */}
             <button
               type="submit"
-              disabled={!!submitting || !stripe || !clientSecret}
+              disabled={!!submitting || !stripe}
               className="btn-primary w-full py-4 text-base font-bold disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-brand-red/25 hover:shadow-brand-red/40 transition-all"
             >
               {submitting ? (
