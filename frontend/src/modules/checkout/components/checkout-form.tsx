@@ -24,9 +24,18 @@ import { trackBeginCheckout } from "@/lib/analytics"
 // ── Constants ────────────────────────────────────────────
 
 const FREE_SHIPPING_THRESHOLD = 5000 // $50 in cents
-const SHIPPING_STANDARD = 599
-const SHIPPING_EXPRESS = 1299
+const SHIPPING_STANDARD_FALLBACK = 599
+const SHIPPING_EXPRESS_FALLBACK = 1299
 const TAX_RATE = 0.0825
+
+type EasyPostRate = {
+  id: string
+  carrier: string
+  service: string
+  rate: number
+  currency: string
+  delivery_days: number | null
+}
 
 const VALID_CODES: Record<string, number> = {
   WELCOME10: 10,
@@ -115,6 +124,11 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
   const [submitting, setSubmitting] = useState("")
   const [paymentError, setPaymentError] = useState("")
 
+  // EasyPost dynamic rates
+  const [easypostRates, setEasypostRates] = useState<EasyPostRate[]>([])
+  const [ratesLoading, setRatesLoading] = useState(false)
+  const [ratesShipmentId, setRatesShipmentId] = useState("")
+
   // Discount code input
   const [codeInput, setCodeInput] = useState("")
   const [codeError, setCodeError] = useState("")
@@ -141,13 +155,77 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Fetch EasyPost rates when address is complete
+  useEffect(() => {
+    if (!address || !city || !state || !zip || zip.length < 5) {
+      setEasypostRates([])
+      return
+    }
+
+    const controller = new AbortController()
+    const fetchRates = async () => {
+      setRatesLoading(true)
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
+        const res = await fetch(`${backendUrl}/store/shipping-rates`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            address: { street1: address, city, state, zip, country: "US" },
+          }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setEasypostRates(data.rates || [])
+          setRatesShipmentId(data.shipment_id || "")
+        }
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          console.warn("Failed to fetch shipping rates, using fallbacks")
+        }
+      } finally {
+        setRatesLoading(false)
+      }
+    }
+
+    // Debounce the API call
+    const timeout = setTimeout(fetchRates, 600)
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
+  }, [address, city, state, zip])
+
+  // Get shipping prices from EasyPost rates or fallbacks
+  const shippingStandardPrice = useMemo(() => {
+    if (easypostRates.length > 0) {
+      // Find cheapest non-express rate (Priority, GroundAdvantage, etc.)
+      const standard = easypostRates.find(
+        (r) => r.service === "GroundAdvantage" || r.service === "Priority"
+      ) || easypostRates[0]
+      return standard ? Math.round(standard.rate * 100) : SHIPPING_STANDARD_FALLBACK
+    }
+    return SHIPPING_STANDARD_FALLBACK
+  }, [easypostRates])
+
+  const shippingExpressPrice = useMemo(() => {
+    if (easypostRates.length > 0) {
+      const express = easypostRates.find(
+        (r) => r.service === "Express" || r.service === "PriorityMailExpress"
+      )
+      return express ? Math.round(express.rate * 100) : SHIPPING_EXPRESS_FALLBACK
+    }
+    return SHIPPING_EXPRESS_FALLBACK
+  }, [easypostRates])
+
   // Compute shipping cost
   const qualifiesFreeShipping = sub >= FREE_SHIPPING_THRESHOLD
   const shippingCost = useMemo(() => {
     if (shippingMethod === "free" && qualifiesFreeShipping) return 0
-    if (shippingMethod === "express") return SHIPPING_EXPRESS
-    return SHIPPING_STANDARD
-  }, [shippingMethod, qualifiesFreeShipping])
+    if (shippingMethod === "express") return shippingExpressPrice
+    return shippingStandardPrice
+  }, [shippingMethod, qualifiesFreeShipping, shippingStandardPrice, shippingExpressPrice])
 
   // Auto-select free shipping when eligible
   useEffect(() => {
@@ -159,13 +237,23 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
   const estimatedTax = Math.round((sub - discountAmount) * TAX_RATE)
   const orderTotal = Math.max(0, sub - discountAmount) + shippingCost + estimatedTax
 
-  // Delivery dates
+  // Delivery dates (use EasyPost estimate when available)
   const deliveryRange = useMemo(() => {
+    if (easypostRates.length > 0) {
+      const rate = shippingMethod === "express"
+        ? easypostRates.find((r) => r.service === "Express" || r.service === "PriorityMailExpress")
+        : easypostRates.find((r) => r.service === "GroundAdvantage" || r.service === "Priority") || easypostRates[0]
+      if (rate?.delivery_days) {
+        const min = rate.delivery_days
+        const max = min + 2
+        return `${getDeliveryDate(min)} – ${getDeliveryDate(max)}`
+      }
+    }
     if (shippingMethod === "express") {
       return `${getDeliveryDate(2)} – ${getDeliveryDate(3)}`
     }
     return `${getDeliveryDate(5)} – ${getDeliveryDate(7)}`
-  }, [shippingMethod])
+  }, [shippingMethod, easypostRates])
 
   // Discount code handlers
   function handleApplyCode() {
@@ -590,11 +678,17 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
                     <div className="flex items-center gap-3">
                       <input type="radio" name="shipping" value="standard" checked={shippingMethod === "standard"} onChange={() => setShippingMethod("standard")} className="accent-brand-red w-4 h-4" />
                       <div>
-                        <p className="font-heading font-semibold text-sm text-brand-black">Standard Shipping</p>
+                        <p className="font-heading font-semibold text-sm text-brand-black">
+                          Standard Shipping
+                          {ratesLoading && <span className="ml-2 text-xs text-brand-gray-400">(updating...)</span>}
+                          {easypostRates.length > 0 && !ratesLoading && (
+                            <span className="ml-2 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold">LIVE RATE</span>
+                          )}
+                        </p>
                         <p className="text-xs text-brand-gray-500">Arrives {getDeliveryDate(5)} – {getDeliveryDate(7)}</p>
                       </div>
                     </div>
-                    <span className="font-heading font-bold text-sm text-brand-black">{formatPrice(SHIPPING_STANDARD)}</span>
+                    <span className="font-heading font-bold text-sm text-brand-black">{formatPrice(shippingStandardPrice)}</span>
                   </label>
                 )}
 
@@ -611,11 +705,14 @@ export default function CheckoutForm({ clientSecret, stripe = null, elements = n
                       <p className="font-heading font-semibold text-sm text-brand-black flex items-center gap-1.5">
                         Express Shipping
                         <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full font-bold">FAST</span>
+                        {easypostRates.length > 0 && !ratesLoading && (
+                          <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold">LIVE RATE</span>
+                        )}
                       </p>
                       <p className="text-xs text-brand-gray-500">Arrives {getDeliveryDate(2)} – {getDeliveryDate(3)}</p>
                     </div>
                   </div>
-                  <span className="font-heading font-bold text-sm text-brand-black">{formatPrice(SHIPPING_EXPRESS)}</span>
+                  <span className="font-heading font-bold text-sm text-brand-black">{formatPrice(shippingExpressPrice)}</span>
                 </label>
               </div>
 

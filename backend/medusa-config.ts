@@ -36,6 +36,38 @@ export default defineConfig({
         ],
       },
     },
+    // EasyPost Fulfillment Provider
+    {
+      resolve: "@medusajs/medusa/fulfillment",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/easypost",
+            id: "easypost",
+            options: {
+              apiKey: process.env.EASYPOST_API_KEY || "",
+            },
+          },
+        ],
+      },
+    },
+    // Resend Email Notification Provider
+    {
+      resolve: "@medusajs/medusa/notification",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/resend-notification",
+            id: "resend",
+            options: {
+              channels: ["email"],
+              apiKey: process.env.RESEND_API_KEY || "",
+              fromEmail: process.env.EMAIL_FROM || "orders@winepopperusa.com",
+            },
+          },
+        ],
+      },
+    },
     // S3-compatible File Storage (Cloudflare R2)
     {
       resolve: "@medusajs/file-s3",
