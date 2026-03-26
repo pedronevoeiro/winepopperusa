@@ -72,7 +72,7 @@ class EasyPostFulfillmentService extends AbstractFulfillmentProviderService {
   /**
    * Whether this provider supports dynamic price calculation.
    */
-  async canCalculate(data: Record<string, unknown>): Promise<boolean> {
+  async canCalculate(data: any): Promise<boolean> {
     return true
   }
 
