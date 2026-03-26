@@ -5,8 +5,8 @@ RUN apk add --no-cache python3 make g++
 WORKDIR /app
 
 # Install dependencies
-COPY package.json ./
-RUN npm install --legacy-peer-deps && npm install ts-node --legacy-peer-deps
+COPY package.json package-lock.json* ./
+RUN npm ci --legacy-peer-deps && npm install ts-node --legacy-peer-deps
 
 # Add node_modules/.bin to PATH
 ENV PATH="/app/node_modules/.bin:$PATH"

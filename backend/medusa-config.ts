@@ -1,4 +1,4 @@
-import { defineConfig, loadEnv } from "@medusajs/framework/utils"
+import { defineConfig, loadEnv, Modules } from "@medusajs/framework/utils"
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
 
@@ -20,6 +20,7 @@ export default defineConfig({
   modules: [
     // Stripe Payment Provider
     {
+      key: Modules.PAYMENT,
       resolve: "@medusajs/medusa/payment",
       options: {
         providers: [
@@ -38,6 +39,7 @@ export default defineConfig({
     },
     // EasyPost Fulfillment Provider
     {
+      key: Modules.FULFILLMENT,
       resolve: "@medusajs/medusa/fulfillment",
       options: {
         providers: [
@@ -53,6 +55,7 @@ export default defineConfig({
     },
     // Resend Email Notification Provider
     {
+      key: Modules.NOTIFICATION,
       resolve: "@medusajs/medusa/notification",
       options: {
         providers: [
@@ -70,6 +73,7 @@ export default defineConfig({
     },
     // S3-compatible File Storage (Cloudflare R2)
     ...(process.env.S3_ACCESS_KEY_ID ? [{
+      key: Modules.FILE,
       resolve: "@medusajs/medusa/file",
       options: {
         providers: [
