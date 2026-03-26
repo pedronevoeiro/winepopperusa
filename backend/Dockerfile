@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps && npm install ts-node --legacy-peer-deps
+RUN if [ -f package-lock.json ]; then npm ci --legacy-peer-deps; else npm install --legacy-peer-deps; fi && npm install ts-node --legacy-peer-deps
 
 # Add node_modules/.bin to PATH
 ENV PATH="/app/node_modules/.bin:$PATH"
