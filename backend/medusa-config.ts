@@ -69,19 +69,27 @@ export default defineConfig({
       },
     },
     // S3-compatible File Storage (Cloudflare R2)
-    {
-      resolve: "@medusajs/file-s3",
+    ...(process.env.S3_ACCESS_KEY_ID ? [{
+      resolve: "@medusajs/medusa/file",
       options: {
-        file_url: process.env.S3_FILE_URL || "",
-        access_key_id: process.env.S3_ACCESS_KEY_ID || "",
-        secret_access_key: process.env.S3_SECRET_ACCESS_KEY || "",
-        region: process.env.S3_REGION || "auto",
-        bucket: process.env.S3_BUCKET || "winepopper-media",
-        endpoint: process.env.S3_ENDPOINT || "",
-        additional_config: {
-          forcePathStyle: true,
-        },
+        providers: [
+          {
+            resolve: "@medusajs/file-s3",
+            id: "s3",
+            options: {
+              file_url: process.env.S3_FILE_URL || "",
+              access_key_id: process.env.S3_ACCESS_KEY_ID || "",
+              secret_access_key: process.env.S3_SECRET_ACCESS_KEY || "",
+              region: process.env.S3_REGION || "auto",
+              bucket: process.env.S3_BUCKET || "winepopper-media",
+              endpoint: process.env.S3_ENDPOINT || "",
+              additional_config: {
+                forcePathStyle: true,
+              },
+            },
+          },
+        ],
       },
-    },
+    }] : []),
   ],
 })
