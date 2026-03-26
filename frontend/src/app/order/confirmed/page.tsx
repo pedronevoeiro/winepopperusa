@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import Link from "next/link"
 import { CheckCircle, Mail, Package, Truck, Instagram, Share2 } from "lucide-react"
+import { trackPurchase, consumePendingOrder } from "@/lib/analytics"
 
 function addBusinessDays(start: Date, days: number): Date {
   const result = new Date(start)
@@ -30,8 +31,19 @@ export default function OrderConfirmedPage() {
     return `${fmt(from)} – ${fmt(to)}`
   }, [])
 
+  const purchaseTracked = useRef(false)
+
   useEffect(() => {
     document.title = "Order Confirmed | Winepopper USA"
+
+    // GA4: purchase — fire once from sessionStorage data
+    if (!purchaseTracked.current) {
+      purchaseTracked.current = true
+      const order = consumePendingOrder()
+      if (order) {
+        trackPurchase(order)
+      }
+    }
   }, [])
 
   return (

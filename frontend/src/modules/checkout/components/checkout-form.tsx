@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { useCartStore } from "@/lib/cart-store"
 import { formatPrice } from "@/lib/utils"
-import { trackBeginCheckout } from "@/lib/analytics"
+import { trackBeginCheckout, saveOrderForTracking } from "@/lib/analytics"
 
 // ── Constants ────────────────────────────────────────────
 
@@ -164,7 +164,13 @@ export default function CheckoutForm({ stripe = null, elements = null }: Checkou
   const sub = subtotal()
   useEffect(() => {
     if (sub > 0) {
-      trackBeginCheckout(sub)
+      const ga4Items = items.map((i) => ({
+        item_id: i.variantId,
+        item_name: i.title,
+        price: i.price / 100,
+        quantity: i.quantity,
+      }))
+      trackBeginCheckout(sub, ga4Items)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -372,6 +378,11 @@ export default function CheckoutForm({ stripe = null, elements = null }: Checkou
         setPaymentError(error.message || "Payment failed. Please try again.")
         setSubmitting("")
       } else {
+        saveOrderForTracking({
+          id: `WP-${Date.now()}`,
+          value: orderTotal,
+          items: items.map((i) => ({ id: i.variantId, name: i.title, price: i.price, quantity: i.quantity })),
+        })
         clearCart()
         router.push("/order/confirmed")
       }
@@ -404,6 +415,11 @@ export default function CheckoutForm({ stripe = null, elements = null }: Checkou
         setPaymentError(error.message || "Payment failed. Please try again.")
         setSubmitting("")
       } else {
+        saveOrderForTracking({
+          id: `WP-${Date.now()}`,
+          value: orderTotal,
+          items: items.map((i) => ({ id: i.variantId, name: i.title, price: i.price, quantity: i.quantity })),
+        })
         clearCart()
         router.push("/order/confirmed")
       }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import {
   ShieldCheck,
@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import type { Product } from "@/lib/products-data"
 import { useCartStore } from "@/lib/cart-store"
-import { trackAddToCart } from "@/lib/analytics"
+import { trackAddToCart, trackViewItem } from "@/lib/analytics"
 import { formatPrice, getDiscountPercentage } from "@/lib/utils"
 
 interface ProductInfoProps {
@@ -75,6 +75,16 @@ export default function ProductInfo({ product }: ProductInfoProps) {
     : 0
 
   const deliveryDates = useMemo(() => getDeliveryDateRange(), [])
+
+  // ── GA4: view_item ──────────────────────────────────────
+  useEffect(() => {
+    trackViewItem({
+      id: variant.id,
+      name: product.title,
+      price: variant.price,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const totalPriceCents = variant.price * quantity
   const qualifiesForFreeShipping = totalPriceCents >= 5000 // $50.00
