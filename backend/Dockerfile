@@ -18,9 +18,17 @@ COPY . .
 RUN DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
     REDIS_URL=redis://localhost:6379 \
     medusa build && \
-    echo "=== Checking admin build ===" && \
-    find /app -name "index.html" -path "*/admin*" 2>/dev/null && \
-    ls -la /app/.medusa/server/public/admin/ 2>/dev/null || true
+    echo "=== Locating admin build ===" && \
+    ADMIN_HTML=$(find /app -name "index.html" -path "*/admin*" 2>/dev/null | head -1) && \
+    if [ -n "$ADMIN_HTML" ]; then \
+      ADMIN_DIR=$(dirname "$ADMIN_HTML") && \
+      echo "Found admin at: $ADMIN_DIR" && \
+      mkdir -p /app/.medusa/server/public/admin && \
+      cp -r "$ADMIN_DIR"/* /app/.medusa/server/public/admin/ && \
+      echo "Admin copied to /app/.medusa/server/public/admin/"; \
+    else \
+      echo "WARNING: No admin index.html found — admin dashboard will be disabled"; \
+    fi
 
 # Production
 ENV NODE_ENV=production
