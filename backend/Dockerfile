@@ -19,13 +19,9 @@ RUN DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
     REDIS_URL=redis://localhost:6379 \
     medusa build
 
-# Find admin build and ensure it's in the expected location
-RUN echo "=== Admin build files ===" && \
-    find /app -name "index.html" -not -path "*/node_modules/*" 2>/dev/null && \
-    echo "=== .medusa structure ===" && \
-    ls -la /app/.medusa/server/public/ 2>/dev/null || true
-
-ENV MEDUSA_DISABLE_ADMIN=true
+# Copy admin build to the path medusa start expects
+RUN mkdir -p /app/.medusa/server/public/admin && \
+    cp -r /app/dist/public/admin/* /app/.medusa/server/public/admin/
 
 # Production
 ENV NODE_ENV=production
