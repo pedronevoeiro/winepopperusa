@@ -25,4 +25,14 @@ ENV PORT=9000
 
 EXPOSE 9000
 
-CMD ["sh", "-c", "medusa db:migrate && medusa start"]
+CMD ["sh", "-c", "\
+  echo '=== Running migrations ===' && \
+  medusa db:migrate && \
+  echo '=== Migrations complete ===' && \
+  if [ -n \"$ADMIN_EMAIL\" ] && [ -n \"$ADMIN_PASSWORD\" ]; then \
+    echo '=== Creating admin user ===' && \
+    medusa exec ./src/scripts/create-admin.ts || true; \
+  fi && \
+  echo '=== Starting Medusa ===' && \
+  medusa start \
+"]
