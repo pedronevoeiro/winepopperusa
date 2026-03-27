@@ -2,7 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ChevronRight } from "lucide-react"
-import { products, getProductByHandle } from "@/lib/products-data"
+import { products as staticProducts } from "@/lib/products-data"
+import { fetchProductByHandle, fetchProducts } from "@/lib/medusa-products"
 import { getProductSchema, getBreadcrumbSchema } from "@/lib/structured-data"
 import { siteConfig } from "@/lib/config"
 import ImageGallery from "@/modules/products/components/image-gallery"
@@ -12,13 +13,14 @@ interface PageProps {
   params: Promise<{ handle: string }>
 }
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const products = await fetchProducts().catch(() => staticProducts)
   return products.map((p) => ({ handle: p.handle }))
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { handle } = await params
-  const product = getProductByHandle(handle)
+  const product = await fetchProductByHandle(handle)
 
   if (!product) {
     return { title: "Product Not Found" }
@@ -41,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { handle } = await params
-  const product = getProductByHandle(handle)
+  const product = await fetchProductByHandle(handle)
 
   if (!product) {
     notFound()

@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { products } from "@/lib/products-data"
+import { fetchProducts } from "@/lib/medusa-products"
 import ProductCard from "@/modules/products/components/product-card"
 
 export const metadata: Metadata = {
@@ -16,7 +16,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const products = await fetchProducts()
+
   return (
     <main className="container-main py-12 md:py-16">
       <h1 className="text-4xl md:text-5xl font-heading font-bold text-center text-brand-black mb-10">

@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ShoppingCart } from "lucide-react"
-import { products } from "@/lib/products-data"
+import type { Product } from "@/lib/products-data"
 import { useCartStore } from "@/lib/cart-store"
 import { trackAddToCart } from "@/lib/analytics"
 import { formatPrice, getDiscountPercentage } from "@/lib/utils"
@@ -14,10 +14,14 @@ const productBadges: Record<string, { label: string; color: string }> = {
   "refill-gas-capsule": { label: "Fits All Models", color: "bg-green-100 text-green-800" },
 }
 
-export function ProductLineup() {
+interface ProductLineupProps {
+  products: Product[]
+}
+
+export function ProductLineup({ products }: ProductLineupProps) {
   const addItem = useCartStore((s) => s.addItem)
 
-  function handleQuickAdd(product: (typeof products)[0]) {
+  function handleQuickAdd(product: Product) {
     const variant = product.variants[0]
     addItem({
       id: product.id,

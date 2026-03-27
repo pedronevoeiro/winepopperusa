@@ -33,14 +33,14 @@ export interface Product {
 
 export const products: Product[] = [
   {
-    id: "winepopper-aluminum",
+    id: "prod_01KMRCHYNP5WS7N24GZC24QQ1J",
     title: "Winepopper Aluminum",
     handle: "winepopper-aluminum",
     shortDescription: "Premium aluminum & steel build — 2 cartridges included (~60 pops)",
     description: `Experience effortless wine opening with the Winepopper Aluminum. Using advanced pneumatic pressure technology, this premium corkscrew extracts any cork in under 3 seconds — without pulling, twisting, or breaking. The inert gas preserves the wine's natural properties, aroma, and flavor.`,
     variants: [
       {
-        id: "var-aluminum-default",
+        id: "variant_01KMRCHYQGFJ1ST8PEH999ZA1D",
         title: "Default",
         sku: "FWPPE001",
         price: 3490,
@@ -94,14 +94,14 @@ export const products: Product[] = [
     ],
   },
   {
-    id: "winepopper-lite",
+    id: "prod_01KMRCJ8CPQ3CCGQ04S85K12NM",
     title: "Winepopper Lite",
     handle: "winepopper-lite",
     shortDescription: "Lightweight plastic body (150g) — perfect for travel & everyday use",
     description: `The Winepopper Lite brings the same revolutionary pneumatic technology in a lightweight, compact design. Perfect for everyday use and travel. Place over the bottle, press, and the cork glides out in seconds.`,
     variants: [
       {
-        id: "var-lite-default",
+        id: "variant_01KMRCJ8DQ093K981R0EHCQQZV",
         title: "Default",
         sku: "FWPPE002",
         price: 2490,
@@ -145,35 +145,35 @@ export const products: Product[] = [
     ],
   },
   {
-    id: "refill-gas-capsule",
+    id: "prod_01KMRCJMQ8DP5H0834T0TZ05JT",
     title: "Refill Gas Capsule",
     handle: "refill-gas-capsule",
     shortDescription: "~30 pops per capsule — fits both Aluminum & Lite models",
     description: `Compatible replacement gas capsules for all Winepopper models. Each capsule provides approximately 30 bottle openings with clean, safe, and consistent pressure. Ozone-friendly inert gas.`,
     variants: [
       {
-        id: "var-refill-1",
+        id: "variant_01KMRCJMR4PK1ENAVND2K38NE5",
         title: "1 Capsule",
         sku: "FWPPE-REFILL-1",
         price: 990,
         available: true,
       },
       {
-        id: "var-refill-2",
+        id: "variant_01KMRCJMR5ZNS79GBG9W4ERKNJ",
         title: "2 Capsules",
         sku: "FWPPE-REFILL-2",
         price: 1580,
         available: true,
       },
       {
-        id: "var-refill-4",
+        id: "variant_01KMRCJMR5ZMXJ8XH3X4DZWYY4",
         title: "4 Capsules",
         sku: "FWPPE-REFILL-4",
         price: 2760,
         available: true,
       },
       {
-        id: "var-refill-10",
+        id: "variant_01KMRCJMR5JG2AJBBTCX21DCJB",
         title: "10 Capsules",
         sku: "FWPPE-REFILL-10",
         price: 5980,

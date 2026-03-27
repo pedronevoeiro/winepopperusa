@@ -1,5 +1,5 @@
 import { siteConfig } from "./config"
-import { products, type Product } from "./products-data"
+import { products as staticProducts, type Product } from "./products-data"
 
 const BASE_URL = siteConfig.url
 
@@ -142,6 +142,10 @@ export function getBreadcrumbSchema(
 }
 
 export function getProductListSchema() {
+  return getProductListSchemaFromProducts(staticProducts)
+}
+
+export function getProductListSchemaFromProducts(products: Product[]) {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",

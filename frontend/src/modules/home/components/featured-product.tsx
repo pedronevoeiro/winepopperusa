@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Check, ShoppingCart, ArrowRight, ShieldCheck, Truck, RotateCcw } from "lucide-react"
-import { products } from "@/lib/products-data"
+import type { Product } from "@/lib/products-data"
 import { useCartStore } from "@/lib/cart-store"
 import { trackAddToCart } from "@/lib/analytics"
 import { formatPrice } from "@/lib/utils"
@@ -17,9 +17,12 @@ const highlights = [
   "Compact enough to take to any dinner party",
 ]
 
-export function FeaturedProduct() {
+interface FeaturedProductProps {
+  product: Product
+}
+
+export function FeaturedProduct({ product }: FeaturedProductProps) {
   const addItem = useCartStore((state) => state.addItem)
-  const product = products[0]
   const variant = product.variants[0]
 
   const handleAddToCart = () => {

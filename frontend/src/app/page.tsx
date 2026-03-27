@@ -8,9 +8,15 @@ import { ProductLineup } from "@/modules/home/components/product-lineup"
 import { Testimonials } from "@/modules/home/components/testimonials"
 import { FAQSection } from "@/modules/home/components/faq-section"
 import { CTASection } from "@/modules/home/components/cta-section"
-import { getFAQSchema, getProductListSchema } from "@/lib/structured-data"
+import { getFAQSchema, getProductListSchemaFromProducts } from "@/lib/structured-data"
+import { fetchProducts, fetchFeaturedProduct } from "@/lib/medusa-products"
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [products, featuredProduct] = await Promise.all([
+    fetchProducts(),
+    fetchFeaturedProduct(),
+  ])
+
   return (
     <>
       <script
@@ -19,15 +25,15 @@ export default function HomePage() {
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(getProductListSchema()) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(getProductListSchemaFromProducts(products)) }}
       />
       <Hero />
       <SocialProofBar />
       <HowItWorks />
       <LifestyleSection />
-      <FeaturedProduct />
+      <FeaturedProduct product={featuredProduct} />
       <FeaturesGrid />
-      <ProductLineup />
+      <ProductLineup products={products} />
       <Testimonials />
       <FAQSection />
       <CTASection />
