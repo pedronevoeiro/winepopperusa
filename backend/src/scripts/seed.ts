@@ -3,7 +3,6 @@ import {
   IProductModuleService,
   IRegionModuleService,
   ISalesChannelModuleService,
-  IShippingModuleService,
 } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 
@@ -39,7 +38,7 @@ export default async function seed({ container }: ExecArgs) {
   logger.info("Creating products...")
   const productService: IProductModuleService = container.resolve(Modules.PRODUCT)
 
-  const products = await productService.createProducts([
+  const products = await (productService.createProducts as any)([
     {
       title: "Winepopper Aluminum | Automatic Gas Corkscrew",
       handle: "winepopper-aluminum",
