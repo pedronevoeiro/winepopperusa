@@ -19,11 +19,14 @@ RUN DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
     REDIS_URL=redis://localhost:6379 \
     medusa build
 
-# Copy admin build output to where medusa start expects it
-# medusa build outputs admin to /app/dist/public/admin/
-# but medusa start looks for it at /app/.medusa/server/public/admin/
+# Ensure admin files are available everywhere medusa might look
 RUN mkdir -p /app/.medusa/server/public/admin && \
-    cp -r /app/dist/public/admin/* /app/.medusa/server/public/admin/
+    cp -r /app/dist/public/admin/* /app/.medusa/server/public/admin/ && \
+    mkdir -p /app/public/admin && \
+    cp -r /app/dist/public/admin/* /app/public/admin/ && \
+    ls -la /app/.medusa/server/public/admin/index.html && \
+    ls -la /app/public/admin/index.html && \
+    ls -la /app/dist/public/admin/index.html
 
 # Production
 ENV NODE_ENV=production
@@ -31,4 +34,4 @@ ENV PORT=9000
 
 EXPOSE 9000
 
-CMD ["sh", "-c", "medusa db:migrate && if [ -n \"$ADMIN_EMAIL\" ] && [ -n \"$ADMIN_PASSWORD\" ]; then medusa exec ./src/scripts/create-admin.ts || true; fi && medusa start"]
+CMD ["sh", "-c", "cd /app && medusa db:migrate && if [ -n \"$ADMIN_EMAIL\" ] && [ -n \"$ADMIN_PASSWORD\" ]; then medusa exec ./src/scripts/create-admin.ts || true; fi && medusa start"]
