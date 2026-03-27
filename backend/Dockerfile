@@ -14,10 +14,14 @@ ENV PATH="/app/node_modules/.bin:$PATH"
 # Copy source code
 COPY . .
 
-# Build backend only (admin disabled to avoid index.html path issues)
+# Build backend + admin
 RUN DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
     REDIS_URL=redis://localhost:6379 \
     medusa build
+
+# Symlink admin build so medusa start finds it
+RUN mkdir -p /app/.medusa/server/public && \
+    ln -sf /app/dist/public/admin /app/.medusa/server/public/admin
 
 # Production
 ENV NODE_ENV=production
