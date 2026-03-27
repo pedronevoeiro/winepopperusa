@@ -14,10 +14,20 @@ ENV PATH="/app/node_modules/.bin:$PATH"
 # Copy source code
 COPY . .
 
-# Build backend only (admin disabled in medusa-config.ts)
+# Build backend and admin
 RUN DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
     REDIS_URL=redis://localhost:6379 \
     medusa build
+
+# Debug: find where admin build output is located
+RUN echo "=== All index.html files ===" && \
+    find /app -name "index.html" 2>/dev/null && \
+    echo "=== .medusa directory ===" && \
+    ls -laR /app/.medusa/ 2>/dev/null | head -80 && \
+    echo "=== dist directory ===" && \
+    ls -laR /app/dist/ 2>/dev/null | head -40 && \
+    echo "=== build directory ===" && \
+    ls -laR /app/build/ 2>/dev/null | head -40 || true
 
 # Production
 ENV NODE_ENV=production
