@@ -19,15 +19,11 @@ RUN DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
     REDIS_URL=redis://localhost:6379 \
     medusa build
 
-# Debug: find where admin build output is located
-RUN echo "=== All index.html files ===" && \
-    find /app -name "index.html" 2>/dev/null && \
-    echo "=== .medusa directory ===" && \
-    ls -laR /app/.medusa/ 2>/dev/null | head -80 && \
-    echo "=== dist directory ===" && \
-    ls -laR /app/dist/ 2>/dev/null | head -40 && \
-    echo "=== build directory ===" && \
-    ls -laR /app/build/ 2>/dev/null | head -40 || true
+# Copy admin build output to where medusa start expects it
+# medusa build outputs admin to /app/dist/public/admin/
+# but medusa start looks for it at /app/.medusa/server/public/admin/
+RUN mkdir -p /app/.medusa/server/public/admin && \
+    cp -r /app/dist/public/admin/* /app/.medusa/server/public/admin/
 
 # Production
 ENV NODE_ENV=production
