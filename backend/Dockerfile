@@ -17,18 +17,15 @@ COPY . .
 # Build (dummy DATABASE_URL needed for config loader during build)
 RUN DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
     REDIS_URL=redis://localhost:6379 \
-    medusa build && \
-    echo "=== Locating admin build ===" && \
-    ADMIN_HTML=$(find /app -name "index.html" -path "*/admin*" 2>/dev/null | head -1) && \
-    if [ -n "$ADMIN_HTML" ]; then \
-      ADMIN_DIR=$(dirname "$ADMIN_HTML") && \
-      echo "Found admin at: $ADMIN_DIR" && \
-      mkdir -p /app/.medusa/server/public/admin && \
-      cp -r "$ADMIN_DIR"/* /app/.medusa/server/public/admin/ && \
-      echo "Admin copied to /app/.medusa/server/public/admin/"; \
-    else \
-      echo "WARNING: No admin index.html found — admin dashboard will be disabled"; \
-    fi
+    medusa build
+
+# Find admin build and ensure it's in the expected location
+RUN echo "=== Admin build files ===" && \
+    find /app -name "index.html" -not -path "*/node_modules/*" 2>/dev/null && \
+    echo "=== .medusa structure ===" && \
+    ls -la /app/.medusa/server/public/ 2>/dev/null || true
+
+ENV MEDUSA_DISABLE_ADMIN=true
 
 # Production
 ENV NODE_ENV=production
