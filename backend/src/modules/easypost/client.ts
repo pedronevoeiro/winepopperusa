@@ -47,7 +47,7 @@ export class EasyPostApiClient {
     shipmentId: string,
     rateId: string
   ): Promise<EasyPostShipment> {
-    const shipment = await this.client.Shipment.buy(shipmentId, { id: rateId })
+    const shipment = await this.client.Shipment.buy(shipmentId, rateId as any)
     return shipment as unknown as EasyPostShipment
   }
 
