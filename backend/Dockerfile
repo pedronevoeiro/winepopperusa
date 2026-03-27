@@ -17,7 +17,10 @@ COPY . .
 # Build (dummy DATABASE_URL needed for config loader during build)
 RUN DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
     REDIS_URL=redis://localhost:6379 \
-    medusa build
+    medusa build && \
+    echo "=== Checking admin build ===" && \
+    find /app -name "index.html" -path "*/admin*" 2>/dev/null && \
+    ls -la /app/.medusa/server/public/admin/ 2>/dev/null || true
 
 # Production
 ENV NODE_ENV=production
