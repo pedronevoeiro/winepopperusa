@@ -14,14 +14,10 @@ ENV PATH="/app/node_modules/.bin:$PATH"
 # Copy source code
 COPY . .
 
-# Build backend + admin
+# Build backend only (admin disabled in medusa-config.ts)
 RUN DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
     REDIS_URL=redis://localhost:6379 \
     medusa build
-
-# Symlink admin build so medusa start finds it
-RUN mkdir -p /app/.medusa/server/public && \
-    ln -sf /app/dist/public/admin /app/.medusa/server/public/admin
 
 # Production
 ENV NODE_ENV=production
@@ -29,14 +25,4 @@ ENV PORT=9000
 
 EXPOSE 9000
 
-CMD ["sh", "-c", "\
-  echo '=== Running migrations ===' && \
-  medusa db:migrate && \
-  echo '=== Migrations complete ===' && \
-  if [ -n \"$ADMIN_EMAIL\" ] && [ -n \"$ADMIN_PASSWORD\" ]; then \
-    echo '=== Creating admin user ===' && \
-    medusa exec ./src/scripts/create-admin.ts || true; \
-  fi && \
-  echo '=== Starting Medusa ===' && \
-  medusa start \
-"]
+CMD ["sh", "-c", "medusa db:migrate && if [ -n \"$ADMIN_EMAIL\" ] && [ -n \"$ADMIN_PASSWORD\" ]; then medusa exec ./src/scripts/create-admin.ts || true; fi && medusa start"]

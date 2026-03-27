@@ -15,8 +15,7 @@ export default defineConfig({
     },
   },
   admin: {
-    backendUrl: process.env.MEDUSA_BACKEND_URL || "http://localhost:9000",
-    path: "/app",
+    disable: true,
   },
   modules: [
     // Stripe Payment Provider
