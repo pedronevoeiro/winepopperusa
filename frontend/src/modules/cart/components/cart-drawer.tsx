@@ -95,7 +95,8 @@ export default function CartDrawer() {
     const hasRefill = handles.includes("refill-gas-capsule")
 
     if (hasWinepopper && !hasRefill) {
-      const refill = products.find((p) => p.id === "refill-gas-capsule")!
+      const refill = products.find((p) => p.handle === "refill-gas-capsule")
+      if (!refill) return null
       const variant = refill.variants[0]
       return {
         product: refill,
@@ -107,7 +108,8 @@ export default function CartDrawer() {
     }
 
     if (hasRefill && !hasWinepopper) {
-      const lite = products.find((p) => p.id === "winepopper-lite")!
+      const lite = products.find((p) => p.handle === "winepopper-lite")
+      if (!lite) return null
       const variant = lite.variants[0]
       return {
         product: lite,
