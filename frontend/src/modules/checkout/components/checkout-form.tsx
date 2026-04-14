@@ -315,8 +315,8 @@ export default function CheckoutForm({ stripe = null, elements = null }: Checkou
         .then((data) => {
           if (data?.places?.[0]) {
             const place = data.places[0]
-            if (!city) setCity(place["place name"] || "")
-            if (!state) setState(place["state abbreviation"] || "")
+            setCity(place["place name"] || "")
+            setState(place["state abbreviation"] || "")
             setZipLookedUp(true)
           }
         })
@@ -696,23 +696,6 @@ export default function CheckoutForm({ stripe = null, elements = null }: Checkou
                 Shipping Address
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <input
-                    type="text"
-                    required
-                    autoComplete="postal-code"
-                    value={zip}
-                    onChange={handleZipChange}
-                    placeholder="ZIP code"
-                    inputMode="numeric"
-                    className={inputCls}
-                  />
-                  {zipLookedUp && city && state && (
-                    <p className="text-xs text-green-600 mt-1">
-                      {city}, {STATE_NAMES[state] || state} — auto-filled from ZIP
-                    </p>
-                  )}
-                </div>
                 <input
                   type="text"
                   required
@@ -769,14 +752,33 @@ export default function CheckoutForm({ stripe = null, elements = null }: Checkou
                     <option key={s} value={s}>{STATE_NAMES[s]} ({s})</option>
                   ))}
                 </select>
-                <input
-                  type="tel"
-                  autoComplete="tel"
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  placeholder="Phone (optional — for delivery updates)"
-                  className={inputCls}
-                />
+                <div className="sm:col-span-2 sm:grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="postal-code"
+                      value={zip}
+                      onChange={handleZipChange}
+                      placeholder="ZIP code"
+                      inputMode="numeric"
+                      className={inputCls}
+                    />
+                    {zipLookedUp && city && state && (
+                      <p className="text-xs text-green-600 mt-1">
+                        City & state verified from ZIP
+                      </p>
+                    )}
+                  </div>
+                  <input
+                    type="tel"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    placeholder="Phone (optional)"
+                    className={`${inputCls} mt-4 sm:mt-0`}
+                  />
+                </div>
               </div>
             </div>
 
